@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>Social Translator</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        width: 300px;
+        margin: 0;
+        padding: 14px;
+        font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      h1 { margin: 0 0 12px; font-size: 14px; }
+      label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+      select, input[type="text"], input[type="password"] { flex: 1; min-width: 0; }
+      fieldset { margin: 0 0 12px; padding: 8px 10px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 6px; }
+      legend { padding: 0 4px; opacity: 0.7; }
+      button { width: 100%; padding: 7px; margin-bottom: 6px; cursor: pointer; }
+      #status { margin-top: 10px; font-size: 12px; opacity: 0.75; white-space: pre-wrap; }
+      #api-key-row[hidden] { display: none; }
+      .hint { margin: -4px 0 10px; font-size: 11px; opacity: 0.6; }
+      #source-list[hidden] { display: none; }
+      #source-list label { margin-bottom: 6px; }
+      #source-list select { flex: 0 0 108px; }
+      .lang-row { display: flex; align-items: center; gap: 6px; }
+      .lang-row input[type="checkbox"] { margin: 0; }
+      .lang-row span { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <h1>Social Translator</h1>
+
+    <label><span>사용</span><input id="enabled" type="checkbox" /></label>
+
+    <label>
+      <span>번역 언어</span>
+      <select id="target"></select>
+    </label>
+
+    <label>
+      <span>번역 엔진</span>
+      <select id="provider">
+        <option value="chrome-ai">기기 내 번역 (Chrome)</option>
+        <option value="google-official">Google Cloud Translation (API 키)</option>
+        <option value="google-free">Google 웹 번역 (키 불필요)</option>
+      </select>
+    </label>
+
+    <label id="api-key-row">
+      <span>API 키</span>
+      <input id="api-key" type="password" placeholder="Cloud Translation v2 키" autocomplete="off" />
+    </label>
+
+    <fieldset>
+      <legend>번역 범위</legend>
+      <label><span>게시물 · 메시지</span><input id="kind-posts" type="checkbox" /></label>
+      <label><span>소개글 · 위치</span><input id="kind-bios" type="checkbox" /></label>
+      <label><span>사용자 이름 · 닉네임</span><input id="kind-names" type="checkbox" /></label>
+      <label><span>채널 · 스레드 이름</span><input id="kind-channels" type="checkbox" /></label>
+      <label><span>해시태그</span><input id="kind-hashtags" type="checkbox" /></label>
+      <label><span>코드 블록 안 텍스트</span><input id="kind-code" type="checkbox" /></label>
+      <label><span>원문 보기 버튼 표시</span><input id="show-toggle" type="checkbox" /></label>
+      <label><span>X 자체 번역 대신 사용</span><input id="override-native" type="checkbox" /></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>원본 언어</legend>
+      <label><span>모든 언어 (자동)</span><input id="source-auto" type="checkbox" /></label>
+      <div id="source-list"></div>
+      <p class="hint">
+        자동이면 내 언어를 뺀 모든 언어를 번역합니다. 끄면 선택한 언어만 번역하고,
+        언어별로 다른 번역 언어를 지정할 수 있습니다.
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend>사이트</legend>
+      <label><span>Discord</span><input id="site-discord" type="checkbox" /></label>
+      <label><span>X</span><input id="site-x" type="checkbox" /></label>
+    </fieldset>
+
+    <button id="download" type="button">기기 내 번역 모델 다운로드</button>
+    <button id="prune-cache" type="button">캐시 정리 (만료 · 1회성)</button>
+    <button id="clear-cache" type="button">번역 캐시 전체 삭제</button>
+    <p id="cache-info" class="hint"></p>
+    <p id="status"></p>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

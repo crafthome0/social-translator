@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Social Translator",
+  "version": "0.1.0",
+  "description": "Inline translation for Discord and X, using Chrome's on-device translator.",
+  "minimum_chrome_version": "138",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://translate-pa.googleapis.com/*",
+    "https://translation.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Social Translator",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://discord.com/channels/*",
+        "https://x.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.zip
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+
+artifacts/
+.codegraph/
+.omo/
