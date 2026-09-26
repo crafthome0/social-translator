@@ -1,12 +1,5 @@
-/** Language tags accepted by Chrome's on-device translator (39 pairs source). */
+/** BCP 47 language tag. */
 export type LanguageTag = string;
-
-export interface TranslateRequest {
-  text: string;
-  targetLanguage: LanguageTag;
-  /** Omit to auto-detect. `"auto"` is NOT a valid tag for the Chrome API. */
-  sourceLanguage?: LanguageTag;
-}
 
 export interface TranslateResult {
   translated: string;
@@ -15,7 +8,7 @@ export interface TranslateResult {
   provider: ProviderId;
 }
 
-export type ProviderId = "chrome-ai" | "google-free" | "google-official";
+export type ProviderId = "google-free" | "google-official";
 
 export class TranslationError extends Error {
   constructor(
@@ -30,22 +23,9 @@ export class TranslationError extends Error {
 }
 
 export type TranslationErrorReason =
-  /** API missing, or hardware/OS does not support on-device models. */
-  | "unsupported"
-  /** Model not on disk and `create()` needs a user gesture to start download. */
-  | "needs-download"
-  /** Language pair is not supported by the provider. */
-  | "unsupported-language"
   /** Provider needs an API key that is missing or rejected. */
   | "auth"
   /** Network / HTTP / rate-limit failure. */
   | "network"
   /** Anything else. */
   | "unknown";
-
-export interface TranslationProvider {
-  readonly id: ProviderId;
-  /** Cheap check — must not trigger a model download. */
-  isSupported(): Promise<boolean>;
-  translate(request: TranslateRequest): Promise<TranslateResult>;
-}

@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   targetLanguage: "ko",
   skipLanguages: ["ko"],
-  preferredProvider: __FIREFOX__ ? "google-free" : "chrome-ai",
+  preferredProvider: "google-free",
   googleApiKey: "",
   perSite: { discord: true, x: true },
   // Names default off: a translated display name makes an account harder to
@@ -78,18 +78,18 @@ export const DEFAULT_SETTINGS: Settings = {
 const KEY = "settings";
 
 export async function loadSettings(): Promise<Settings> {
-  const stored = await chrome.storage.sync.get(KEY);
+  const stored = await browser.storage.sync.get(KEY);
   return merge(stored[KEY]);
 }
 
 export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {
   const next = { ...(await loadSettings()), ...patch };
-  await chrome.storage.sync.set({ [KEY]: next });
+  await browser.storage.sync.set({ [KEY]: next });
   return next;
 }
 
 export function onSettingsChanged(listener: (settings: Settings) => void): void {
-  chrome.storage.onChanged.addListener((changes, area) => {
+  browser.storage.onChanged.addListener((changes, area) => {
     if (area !== "sync") return;
     const change = changes[KEY];
     if (!change) return;
@@ -107,10 +107,7 @@ function merge(value: unknown): Settings {
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
-    preferredProvider:
-      __FIREFOX__ && stored.preferredProvider === "chrome-ai"
-        ? "google-free"
-        : stored.preferredProvider ?? DEFAULT_SETTINGS.preferredProvider,
+    preferredProvider: stored.preferredProvider === "google-official" ? "google-official" : "google-free",
     kinds: { ...DEFAULT_SETTINGS.kinds, ...stored.kinds },
     perSite: { ...DEFAULT_SETTINGS.perSite, ...stored.perSite },
     targetOverrides: { ...DEFAULT_SETTINGS.targetOverrides, ...stored.targetOverrides },

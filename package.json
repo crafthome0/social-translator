@@ -3,18 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Inline translation for Discord and X, powered by Chrome's on-device Translator API.",
+  "description": "Firefox extension for inline translation on Discord and X using Google Translate.",
   "scripts": {
     "build": "bun run scripts/build.ts",
-    "build:firefox": "bun run scripts/build.ts --firefox",
     "dev": "bun run scripts/build.ts --watch",
     "typecheck": "tsc --noEmit",
-    "check-build": "node scripts/check-build.mjs",
-    "zip": "bun run build && cd dist && zip -qr ../social-translator.zip . && cd .. && echo 'wrote social-translator.zip'"
+    "check-build": "node scripts/check-build.mjs"
   },
   "devDependencies": {
     "@types/bun": "1.3.10",
-    "chrome-types": "0.1.447",
+    "@types/firefox-webext-browser": "^143.0.0",
     "typescript": "5.9.3"
   }
 }
