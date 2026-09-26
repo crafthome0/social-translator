@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   targetLanguage: "ko",
   skipLanguages: ["ko"],
-  preferredProvider: "chrome-ai",
+  preferredProvider: __FIREFOX__ ? "google-free" : "chrome-ai",
   googleApiKey: "",
   perSite: { discord: true, x: true },
   // Names default off: a translated display name makes an account harder to
@@ -107,6 +107,10 @@ function merge(value: unknown): Settings {
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
+    preferredProvider:
+      __FIREFOX__ && stored.preferredProvider === "chrome-ai"
+        ? "google-free"
+        : stored.preferredProvider ?? DEFAULT_SETTINGS.preferredProvider,
     kinds: { ...DEFAULT_SETTINGS.kinds, ...stored.kinds },
     perSite: { ...DEFAULT_SETTINGS.perSite, ...stored.perSite },
     targetOverrides: { ...DEFAULT_SETTINGS.targetOverrides, ...stored.targetOverrides },

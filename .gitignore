@@ -1,5 +1,9 @@
 node_modules/
+.tmp/
+.bun-cache/
+.npm-cache/
 dist/
+dist-firefox/
 *.zip
 
 .env
