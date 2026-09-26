@@ -64,6 +64,7 @@ for (const [code, label] of LANGUAGES) {
 }
 
 const settings = await loadSettings();
+if (__FIREFOX__) provider.querySelector('option[value="chrome-ai"]')?.remove();
 enabled.checked = settings.enabled;
 target.value = settings.targetLanguage;
 provider.value = settings.preferredProvider;
@@ -195,7 +196,7 @@ overrideNative.addEventListener(
 /** The API key field and the model button only apply to specific providers. */
 function syncProviderUi(): void {
   apiKeyRow.hidden = provider.value !== "google-official";
-  download.hidden = provider.value !== "chrome-ai";
+  download.hidden = __FIREFOX__ || provider.value !== "chrome-ai";
 }
 siteDiscord.addEventListener("change", () =>
   void persist({ perSite: { discord: siteDiscord.checked, x: siteX.checked } }),
@@ -232,6 +233,12 @@ function describeStatus(result: ModelStatus): string {
 }
 
 async function refreshStatus(): Promise<void> {
+  if (provider.value !== "chrome-ai") {
+    status.textContent = provider.value === "google-official"
+      ? "Google Cloud Translation 사용 중"
+      : "Google 웹 번역 사용 중";
+    return;
+  }
   try {
     const result = await fetchModelStatus(target.value);
     status.textContent = describeStatus(result);

@@ -14,11 +14,13 @@
  *
  * Static assets (manifest, popup HTML, icons) are copied verbatim from public/.
  */
-import { rm, mkdir, cp, readdir } from "node:fs/promises";
+import { rm, mkdir, cp, readdir, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("..", import.meta.url).pathname;
-const OUT = join(ROOT, "dist");
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const firefox = process.argv.includes("--firefox");
+const OUT = join(ROOT, firefox ? "dist-firefox" : "dist");
 const PUBLIC = join(ROOT, "public");
 
 const watch = process.argv.includes("--watch");
@@ -43,13 +45,16 @@ async function buildEntry(entry: Entry): Promise<void> {
     outdir: OUT,
     naming: `${entry.name}.js`,
     target: "browser",
-    format: entry.format,
+    format: firefox && entry.name === "background" ? "iife" : entry.format,
     // Code splitting would emit shared chunks that a classic content script
     // cannot import, so every entry stays self-contained.
     splitting: false,
     minify: isProd,
     sourcemap: isProd ? "none" : "linked",
-    define: { "process.env.NODE_ENV": JSON.stringify(isProd ? "production" : "development") },
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(isProd ? "production" : "development"),
+      __FIREFOX__: String(firefox),
+    },
   });
 
   if (!result.success) {
@@ -80,9 +85,28 @@ async function build(): Promise<void> {
   await Promise.all(ENTRIES.map(buildEntry));
   const assets = await copyPublic();
 
+  if (firefox) {
+    const manifest = JSON.parse(await Bun.file(join(PUBLIC, "manifest.json")).text()) as Record<string, unknown>;
+    delete manifest.minimum_chrome_version;
+    manifest.description = "Inline translation for Discord and X, using Google Translate.";
+    manifest.background = { scripts: ["background.js"] };
+    manifest.browser_specific_settings = {
+      gecko: {
+        id: "social-translator@crafthome0.github.io",
+        strict_min_version: "140.0",
+        data_collection_permissions: {
+          required: ["personalCommunications", "websiteContent", "authenticationInfo"],
+        },
+      },
+    };
+    const scripts = manifest.content_scripts as { world?: string }[];
+    for (const script of scripts) delete script.world;
+    await writeFile(join(OUT, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+
   const elapsed = Math.round(performance.now() - started);
   console.log(
-    `built ${ENTRIES.map((e) => `${e.name}.js`).join(", ")} + ${assets.length} asset(s) -> dist/ in ${elapsed}ms`,
+    `built ${ENTRIES.map((e) => `${e.name}.js`).join(", ")} + ${assets.length} asset(s) -> ${firefox ? "dist-firefox" : "dist"}/ in ${elapsed}ms`,
   );
 }
 
@@ -100,5 +124,5 @@ if (watch) {
       }, 60);
     });
   }
-  console.log("watching src/ and public/ — reload the extension in chrome://extensions after each rebuild");
+  console.log(`watching src/ and public/ — reload the extension in ${firefox ? "about:debugging" : "chrome://extensions"} after each rebuild`);
 }

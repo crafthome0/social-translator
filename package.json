@@ -6,8 +6,10 @@
   "description": "Inline translation for Discord and X, powered by Chrome's on-device Translator API.",
   "scripts": {
     "build": "bun run scripts/build.ts",
+    "build:firefox": "bun run scripts/build.ts --firefox",
     "dev": "bun run scripts/build.ts --watch",
     "typecheck": "tsc --noEmit",
+    "check-build": "node scripts/check-build.mjs",
     "zip": "bun run build && cd dist && zip -qr ../social-translator.zip . && cd .. && echo 'wrote social-translator.zip'"
   },
   "devDependencies": {
