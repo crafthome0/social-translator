@@ -41,9 +41,8 @@
     <label>
       <span>번역 엔진</span>
       <select id="provider">
-        <option value="chrome-ai">기기 내 번역 (Chrome)</option>
-        <option value="google-official">Google Cloud Translation (API 키)</option>
         <option value="google-free">Google 웹 번역 (키 불필요)</option>
+        <option value="google-official">Google Cloud Translation (API 키)</option>
       </select>
     </label>
 
@@ -80,7 +79,6 @@
       <label><span>X</span><input id="site-x" type="checkbox" /></label>
     </fieldset>
 
-    <button id="download" type="button">기기 내 번역 모델 다운로드</button>
     <button id="prune-cache" type="button">캐시 정리 (만료 · 1회성)</button>
     <button id="clear-cache" type="button">번역 캐시 전체 삭제</button>
     <p id="cache-info" class="hint"></p>

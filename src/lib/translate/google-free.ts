@@ -1,15 +1,12 @@
 import {
   TranslationError,
-  type TranslateRequest,
   type TranslateResult,
-  type TranslationProvider,
 } from "./types";
 
 /**
- * Fallback provider: Google Translate's public web endpoint.
+ * Google Translate's public web endpoint.
  *
- * Used when the on-device model is unavailable (unsupported hardware, or a
- * language pair Chrome does not ship). Verified working 2026-09 — note the
+ * Verified working 2026-09 — note the
  * older `translate_a/single?client=gtx` endpoint now 302s to `google.com/sorry`
  * and is NOT usable.
  *
@@ -20,12 +17,11 @@ import {
  *   body: [[["Wie geht es dir?", "Hello there friend"], "auto", "ko"], "te_lib"]
  *   -> [["어떻게 지내세요?", "안녕하세요 친구"], ["de", "en"]]
  *
- * So it handles batching and source detection in one call, and unlike the
- * Chrome API it does accept "auto".
+ * It handles batching and source detection in one call and accepts "auto".
  *
  * Caveats: undocumented, unversioned, IP rate-limited, and may break without
- * notice. It is a fallback, not the primary path. Must be called from the
- * service worker (host_permissions grant) rather than a content script.
+ * notice. It must be called from the background page, which has the host
+ * permission, rather than a content script.
  */
 
 const ENDPOINT = "https://translate-pa.googleapis.com/v1/translateHtml";
@@ -109,19 +105,3 @@ export async function translateBatch(
     };
   });
 }
-
-export const googleFreeProvider: TranslationProvider = {
-  id: "google-free",
-
-  async isSupported() {
-    return true;
-  },
-
-  async translate({ text, targetLanguage, sourceLanguage }: TranslateRequest): Promise<TranslateResult> {
-    const [result] = await translateBatch([text], targetLanguage, sourceLanguage ?? "auto");
-    if (!result) {
-      throw new TranslationError("empty response", "google-free", "unknown");
-    }
-    return result;
-  },
-};

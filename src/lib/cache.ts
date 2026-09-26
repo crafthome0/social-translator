@@ -1,7 +1,7 @@
 import type { LanguageTag } from "./translate/types";
 
 /**
- * Persistent translation cache in `chrome.storage.local`.
+ * Persistent translation cache in `browser.storage.local`.
  *
  * Two reasons it is worth the storage: the free HTTP endpoint is IP rate-limited,
  * and the on-device translator is non-deterministic on short strings — so a
@@ -34,7 +34,7 @@ type Store = Record<string, Entry>;
 
 export interface CacheStats {
   entries: number;
-  /** Approximate bytes this cache occupies in `chrome.storage.local`. */
+  /** Approximate bytes this cache occupies in `browser.storage.local`. */
   bytes: number;
   oldestAt: number | null;
   singleHit: number;
@@ -56,7 +56,7 @@ function cacheKey(text: string, targetLanguage: LanguageTag, provider: string): 
 
 async function load(): Promise<Store> {
   if (memory) return memory;
-  loading ??= chrome.storage.local.get(KEY).then((stored) => {
+  loading ??= browser.storage.local.get(KEY).then((stored) => {
     const value: unknown = stored[KEY];
     memory = isStore(value) ? value : {};
     return memory;
@@ -114,12 +114,12 @@ export async function clearCache(): Promise<void> {
   dirty = false;
   memory = {};
   loading = null;
-  await chrome.storage.local.remove(KEY);
+  await browser.storage.local.remove(KEY);
 }
 
 /** Current cache occupancy, for the settings UI. */
 export async function readCacheStats(): Promise<CacheStats> {
-  const stored = await chrome.storage.local.get(KEY);
+  const stored = await browser.storage.local.get(KEY);
   const value: unknown = stored[KEY];
   const store: Store = isStore(value) ? value : {};
   const entries = Object.entries(store);
@@ -143,7 +143,7 @@ export async function pruneCache(): Promise<number> {
   const before = Object.keys(store).length;
   const next = evict(store);
   dirty = false;
-  await chrome.storage.local.set({ [KEY]: next });
+  await browser.storage.local.set({ [KEY]: next });
   return before - Object.keys(next).length;
 }
 
@@ -158,7 +158,7 @@ async function flush(): Promise<void> {
   const store = memory;
   if (!store || !dirty) return;
   dirty = false;
-  await chrome.storage.local.set({ [KEY]: evict(store) });
+  await browser.storage.local.set({ [KEY]: evict(store) });
 }
 
 /**

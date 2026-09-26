@@ -1,19 +1,8 @@
-import { fetchModelStatus, prepareModel, type ModelStatus } from "../lib/messages";
 import { clearCache, pruneCache, readCacheStats } from "../lib/cache";
 import { loadSettings, saveSettings, type Settings } from "../lib/settings";
 import type { ProviderId } from "../lib/translate/types";
 
-/**
- * Settings popup.
- *
- * Model download is delegated to the service worker rather than run here.
- * Measured on Chrome 153: the worker can call `Translator.create()` with no user
- * gesture, so the click is only a UI affordance — the worker owns the session
- * cache, and a translator warmed there is the one the content script's requests
- * will actually hit.
- */
-
-/** The 39 languages Chrome's on-device translator supports. */
+/** Languages offered by the translation settings popup. */
 const LANGUAGES: readonly [code: string, label: string][] = [
   ["ko", "한국어"], ["en", "English"], ["ja", "日本語"], ["zh", "中文 (简体)"],
   ["zh-Hant", "中文 (繁體)"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"],
@@ -50,7 +39,6 @@ const sourceAuto = el<HTMLInputElement>("source-auto");
 const sourceList = el<HTMLDivElement>("source-list");
 const siteDiscord = el<HTMLInputElement>("site-discord");
 const siteX = el<HTMLInputElement>("site-x");
-const download = el<HTMLButtonElement>("download");
 const clearCacheButton = el<HTMLButtonElement>("clear-cache");
 const pruneCacheButton = el<HTMLButtonElement>("prune-cache");
 const cacheInfo = el<HTMLParagraphElement>("cache-info");
@@ -64,7 +52,6 @@ for (const [code, label] of LANGUAGES) {
 }
 
 const settings = await loadSettings();
-if (__FIREFOX__) provider.querySelector('option[value="chrome-ai"]')?.remove();
 enabled.checked = settings.enabled;
 target.value = settings.targetLanguage;
 provider.value = settings.preferredProvider;
@@ -155,12 +142,10 @@ async function persist(patch: Partial<Settings>): Promise<void> {
 enabled.addEventListener("change", () => void persist({ enabled: enabled.checked }));
 target.addEventListener("change", () => {
   void persist({ targetLanguage: target.value, skipLanguages: [target.value] });
-  void refreshStatus();
 });
 provider.addEventListener("change", () => {
   void persist({ preferredProvider: provider.value as ProviderId });
   syncProviderUi();
-  void refreshStatus();
 });
 
 // Debounced so a key is not written to storage on every keystroke.
@@ -193,10 +178,9 @@ overrideNative.addEventListener(
   () => void persist({ overrideNative: overrideNative.checked }),
 );
 
-/** The API key field and the model button only apply to specific providers. */
+/** The API key field only applies to Google Cloud Translation. */
 function syncProviderUi(): void {
   apiKeyRow.hidden = provider.value !== "google-official";
-  download.hidden = __FIREFOX__ || provider.value !== "chrome-ai";
 }
 siteDiscord.addEventListener("change", () =>
   void persist({ perSite: { discord: siteDiscord.checked, x: siteX.checked } }),
@@ -204,55 +188,6 @@ siteDiscord.addEventListener("change", () =>
 siteX.addEventListener("change", () =>
   void persist({ perSite: { discord: siteDiscord.checked, x: siteX.checked } }),
 );
-
-download.addEventListener("click", () => {
-  download.disabled = true;
-  status.textContent = "모델 다운로드 중… (수 분 걸릴 수 있습니다)";
-  prepareModel(target.value)
-    .then((result) => {
-      status.textContent = describeStatus(result);
-      download.disabled = result.availability === "available" || !result.supported;
-    })
-    .catch((error: unknown) => {
-      status.textContent = `다운로드 실패: ${error instanceof Error ? error.message : String(error)}`;
-      download.disabled = false;
-    });
-});
-
-function describeStatus(result: ModelStatus): string {
-  if (!result.supported) {
-    return "이 브라우저는 기기 내 번역을 지원하지 않습니다. Google 웹 번역을 사용하세요.";
-  }
-  const labels: Record<AIAvailability, string> = {
-    available: `기기 내 번역 모델 준비됨 (→ ${target.value})`,
-    downloadable: "모델 미설치. 아래 버튼으로 다운로드하세요.",
-    downloading: "모델 다운로드가 진행 중입니다.",
-    unavailable: "이 언어는 기기 내 번역을 지원하지 않습니다.",
-  };
-  return labels[result.availability];
-}
-
-async function refreshStatus(): Promise<void> {
-  if (provider.value !== "chrome-ai") {
-    status.textContent = provider.value === "google-official"
-      ? "Google Cloud Translation 사용 중"
-      : "Google 웹 번역 사용 중";
-    return;
-  }
-  try {
-    const result = await fetchModelStatus(target.value);
-    status.textContent = describeStatus(result);
-    download.disabled =
-      !result.supported ||
-      result.availability === "available" ||
-      result.availability === "unavailable";
-  } catch (error) {
-    status.textContent = `상태 확인 실패: ${error instanceof Error ? error.message : String(error)}`;
-    download.disabled = true;
-  }
-}
-
-await refreshStatus();
 
 /**
  * Clearing only empties storage; open tabs keep their in-memory copy and the text
@@ -292,8 +227,8 @@ async function withCacheButtons(work: () => Promise<void>): Promise<void> {
 }
 
 async function reloadTranslatedTabs(): Promise<number> {
-  const tabs = await chrome.tabs.query({ url: ["https://x.com/*", "https://discord.com/*"] });
-  await Promise.all(tabs.map((tab) => (tab.id === undefined ? undefined : chrome.tabs.reload(tab.id))));
+  const tabs = await browser.tabs.query({ url: ["https://x.com/*", "https://discord.com/*"] });
+  await Promise.all(tabs.map((tab) => (tab.id === undefined ? undefined : browser.tabs.reload(tab.id))));
   return tabs.length;
 }
 

@@ -9,17 +9,15 @@ import {
 import { discordAdapter } from "./platforms/discord";
 import { dismissNativeTranslation, readLangHint, xAdapter } from "./platforms/x";
 import type { PlatformAdapter, Target, TargetKind } from "./platforms/types";
-import { translateBatchViaWorker } from "../lib/messages";
+import { translateBatchInBackground } from "../lib/messages";
 import { getCached, primeCache, setCached } from "../lib/cache";
 import { loadSettings, onSettingsChanged, type Settings } from "../lib/settings";
 
 /**
  * Content script: finds translatable content and swaps the translation in place.
  *
- * It does no translation itself. Measured on Chrome 153: `Translator.create()`
- * throws `NotAllowedError` in this ISOLATED world but succeeds in the service
- * worker, and the HTTP fallback is unreachable from here because of CORS. Both
- * providers therefore live in the worker.
+ * It does no translation itself. Network providers live in the background page,
+ * which has permission to contact their endpoints.
  *
  * Both platforms virtualize their lists — elements are destroyed and recreated
  * while scrolling — so state is keyed by container element in a `WeakMap`, and a
@@ -210,7 +208,7 @@ async function retranslate(
 
     // Only the unknown segments are sent; cached ones are spliced back in below.
     const missing = [...segments.entries()].filter(([index]) => cached[index] === undefined);
-    const results = await translateBatchViaWorker({
+    const results = await translateBatchInBackground({
       texts: missing.map(([, text]) => text),
       targetLanguage: hint ? targetFor(hint, settings) : settings.targetLanguage,
       preferredProvider: settings.preferredProvider,
@@ -251,10 +249,8 @@ async function retranslate(
  * text under the current setting.
  *
  * Entries are keyed by the engine that actually translated them, and the worker
- * falls back to the free endpoint for whatever the preferred engine could not
- * handle — measured on `chrome-ai`, 21 short strings per page take that path. So
- * probing the preferred provider alone would miss them forever and re-request
- * every sweep.
+ * falls back to the free endpoint when Google Cloud fails. Probing the preferred
+ * provider alone would miss those entries and re-request every sweep.
  */
 function readCached(segment: string, target: string, settings: Settings): string | undefined {
   for (const provider of providerChain(settings)) {

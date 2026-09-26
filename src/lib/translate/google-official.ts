@@ -1,8 +1,6 @@
 import {
   TranslationError,
-  type TranslateRequest,
   type TranslateResult,
-  type TranslationProvider,
 } from "./types";
 
 /**
@@ -103,22 +101,4 @@ async function requestChunk(
       provider: "google-official" as const,
     };
   });
-}
-
-export function createGoogleOfficialProvider(apiKey: string): TranslationProvider {
-  return {
-    id: "google-official",
-
-    async isSupported() {
-      return apiKey.length > 0;
-    },
-
-    async translate({ text, targetLanguage, sourceLanguage }: TranslateRequest) {
-      const [result] = await translateBatch([text], targetLanguage, apiKey, sourceLanguage);
-      if (!result) {
-        throw new TranslationError("empty response", "google-official", "unknown");
-      }
-      return result;
-    },
-  };
 }
